@@ -14,21 +14,42 @@ class TestJ1939Frames : public QObject
 
 
 private slots:
+    // https://i2.wp.com/www.embeddeduse.com/wp-content/uploads/2020/01/j1939-broadcast-frame-1.png?w=1940&ssl=1
 
+    // Data Page (DP)
+    // PDU Specific (PS)
+    // PDU Format (PF)
+    // Parameter Group Number (PGN) = PDU Format (PF) + PDU Specific (PS)
+    // Source Address (SA)
+
+    // 31...29 | 28 27 26 | 25 | 24 | 23...16 | 15...8 | 7...0
+    //           priority        DP      PF       PS      SA
+
+    // The PGN consists of the PDU Specific (PS) and the PDU Format (PF).
+    // The PS is encoded by the bits 8-15 and
+
+    // the PF by the bits 16-23.
+    // If PF is in the range from 0 to 239, the frame is a PDU-Format-1 frame or a peer-to-peer frame.
+    // If PF is in the range from 240 to 255, the frame is a PDU-Format-2 frame or a broadcast frame.
+    // Bit 24 is the Data Page (DP). You use the DP bit to double the number of available PGNs.
     void testPduFormat_data()
     {
         QTest::addColumn<quint16>("pduFormat");
         QTest::addColumn<bool>("isValid");
         QTest::addColumn<quint32>("frameId");
 
+        // 0 to 511 valid
         QTest::newRow("pf = 73") << quint16{73U} << true << 0x00490000U;
         QTest::newRow("pf = 498") << quint16{498U} << true << 0x01f20000U;
         QTest::newRow("pf = 0") << quint16{0U} << true << 0U;
         QTest::newRow("pf = 511") << quint16{511U} << true << 0x01ff0000U;
+        // invalid
         QTest::newRow("pf = 512") << quint16{512U} << false << 0U;
         QTest::newRow("pf = 65535") << quint16{65535U} << false << 0U;
     }
-
+    // The combination of PF and PS yields the PGN.
+    // The 4096 numbers from 0xf000 to 0xffff are valid broadcast PGNs.
+    // The PGN with PF equal to 255 is for proprietary use.
     void testPduFormat()
     {
         QFETCH(quint16, pduFormat);
